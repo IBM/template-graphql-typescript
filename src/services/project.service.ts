@@ -1,9 +1,9 @@
 import {Provides, Singleton} from 'typescript-ioc';
 
 import {ProjectApi} from './project.api';
-import {ProjectModel, TaskModel} from '../models';
+import {ProjectModel} from '../models';
 import {timer} from '../util';
-import {projects, tasks} from './data';
+import {projects} from './data';
 
 @Singleton
 @Provides(ProjectApi)

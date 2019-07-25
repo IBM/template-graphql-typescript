@@ -1,9 +1,9 @@
 import {Provides, Singleton} from 'typescript-ioc';
 
 import {TaskApi} from './task.api';
-import {ProjectModel, TaskModel} from '../models';
+import {TaskModel} from '../models';
 import {timer} from '../util';
-import {projects, tasks} from './data';
+import {tasks} from './data';
 
 @Singleton
 @Provides(TaskApi)
@@ -16,10 +16,6 @@ export class TaskService implements TaskApi {
     return timer(
       tasks.filter(task => task.project_id === projectId),
       1000);
-  }
-
-  async getProjectForTask(taskData: TaskModel): Promise<ProjectModel> {
-    return timer(projects.find(project => project.id === taskData.project_id), 1000);
   }
 
   async getTask(id: number): Promise<TaskModel | undefined> {
