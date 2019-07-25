@@ -1,4 +1,4 @@
-import { start } from './start';
+import {start} from './start';
 
 start()
   .catch((err) => {

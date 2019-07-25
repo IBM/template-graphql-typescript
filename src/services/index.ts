@@ -1,2 +1,4 @@
-export * from './hello-world.api';
-export * from './hello-world.service';
+export * from './project.api';
+export * from './project.service';
+export * from './task.api';
+export * from './task.service';

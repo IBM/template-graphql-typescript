@@ -1,6 +1,6 @@
-# Node/Typescript Starter Kit
+# Graphql/Typescript Starter Kit
 
-This is a template repository for a Node/Typescript-based BFF or micro-service.
+This is a template repository for a Typescript-based Graphql micro-service.
 
 ## Getting started
 
@@ -19,8 +19,8 @@ echo "# {project name}" > README.md
 
 The starter kit provides the following features:
 
-- REST services using `typescript-rest` decorators
-- Swagger documentation using `typescript-rest-swagger`
+- Graphql server from `graphql-yoga`
+- Graphql decorators from `type-graphql`
 - Dependency injection using `typescript-ioc` decorators
 - Logging using `bunyan`
 - TDD environment with `jest`

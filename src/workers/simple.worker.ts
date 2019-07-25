@@ -42,4 +42,5 @@ class SimpleWorker implements WorkerApi {
   }
 }
 
-export const worker: WorkerApi = workerManager.registerWorker(new SimpleWorker());
+// uncomment to activate worker
+// export const worker: WorkerApi = workerManager.registerWorker(new SimpleWorker());

@@ -18,7 +18,8 @@
     ],
     "lib": [
       "es6",
-      "dom"
+      "dom",
+      "esnext.asynciterable"
     ]
   },
   "include": [
