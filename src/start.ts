@@ -1,18 +1,13 @@
-import { GraphQLServer } from "graphql-yoga";
-import "reflect-metadata";
-import { buildSchema } from "type-graphql";
-import {workerManager} from './workers';
-import {resolverManager} from './resolvers';
+import {GraphQLServer} from 'graphql-yoga';
 import {AddressInfo} from 'net';
+import 'reflect-metadata';
+
+import {workerManager} from './workers';
+import {buildGraphqlSchema} from './schema';
 
 export const start = async (): Promise<any> => {
-  const schema = await buildSchema({
-    resolvers: resolverManager.getResolvers(),
-    emitSchemaFile: true,
-  });
-
   const graphqlServer = new GraphQLServer({
-    schema,
+    schema: await buildGraphqlSchema(),
   });
 
   const graceful = () => {

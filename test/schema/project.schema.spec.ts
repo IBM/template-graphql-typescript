@@ -1,14 +1,18 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as EasyGraphQLTester from 'easygraphql-tester';
+import {buildGraphqlSchema} from '../../src/schema';
 
-const schemaCode = fs.readFileSync(path.join(__dirname, '../../schema.gql'), 'utf8')
-
-const tester = new EasyGraphQLTester(schemaCode);
-
-describe('project.resolver', () => {
+describe('project schema', () => {
   test('canary verifies test infrastructure', () => {
     expect(true).toEqual(true);
+  });
+
+  let tester: EasyGraphQLTester;
+  beforeAll(async () => {
+    const schema = await buildGraphqlSchema();
+
+    tester = new EasyGraphQLTester(schema);
   });
 
   describe('given `query projects`', () => {
