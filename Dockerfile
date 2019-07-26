@@ -1,7 +1,6 @@
 FROM registry.access.redhat.com/ubi8/nodejs-10
 
 COPY dist ${HOME}/dist
-COPY public ${HOME}/public
 COPY package.json ${HOME}
 
 WORKDIR ${HOME}
