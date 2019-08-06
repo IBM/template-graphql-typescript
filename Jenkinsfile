@@ -66,12 +66,6 @@ podTemplate(
                     npm test
                 '''
             }
-            stage('Verify pact') {
-                sh '''#!/bin/bash
-                    set -x
-                    npm run pact:verify
-                '''
-            }
         }
         container(name: 'ibmcloud', shell: '/bin/bash') {
             stage('Verify environment') {
