@@ -32,7 +32,7 @@ podTemplate(
             secretEnvVar(key: 'CLUSTER_TYPE', secretName: 'ibmcloud-apikey', secretKey: 'cluster_type'),
             secretEnvVar(key: 'SERVER_URL', secretName: 'ibmcloud-apikey', secretKey: 'server_url'),
             secretEnvVar(key: 'INGRESS_SUBDOMAIN', secretName: 'ibmcloud-apikey', secretKey: 'ingress_subdomain'),
-            envVar(key: 'CHART_NAME', value: 'template-graphsql-typescript'),
+            envVar(key: 'CHART_NAME', value: 'template-graphql-typescript'),
             envVar(key: 'CHART_ROOT', value: 'chart'),
             envVar(key: 'TMP_DIR', value: '.tmp'),
             envVar(key: 'BUILD_NUMBER', value: "${env.BUILD_NUMBER}"),
