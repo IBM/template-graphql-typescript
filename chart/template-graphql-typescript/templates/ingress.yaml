@@ -1,12 +1,12 @@
 {{- if .Values.ingress.enabled -}}
-{{- $fullName := include "template-node-typescript.fullname" . -}}
+{{- $fullName := include "template-graphql-typescript.fullname" . -}}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: {{ $fullName }}
   labels:
-    app.kubernetes.io/name: {{ include "template-node-typescript.name" . }}
-    helm.sh/chart: {{ include "template-node-typescript.chart" . }}
+    app.kubernetes.io/name: {{ include "template-graphql-typescript.name" . }}
+    helm.sh/chart: {{ include "template-graphql-typescript.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
   {{- with .Values.ingress.annotations }}
@@ -25,7 +25,7 @@ spec:
   {{- end }}
 {{- end }}
   rules:
-    - host: {{ .Values.host }}.{{ $.Values.namespace }}.{{ $.Values.cluster_name }}.{{ $.Values.region }}.{{ $.Values.domainRoot}}
+    - host: {{ include "template-graphql-typescript.host" . }}
       http:
         paths:
           - path: {{ .path }}

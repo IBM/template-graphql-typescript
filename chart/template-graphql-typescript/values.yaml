@@ -1,14 +1,8 @@
-# Default values for template-node-typescript.
+# Default values for template-graphql-typescript.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 replicaCount: 1
-
-host: myhost
-namespace: dev
-cluster_name: cluster
-region: us-south
-domainRoot: containers.appdomain.cloud
 
 image:
   repository: replace

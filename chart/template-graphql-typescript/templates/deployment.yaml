@@ -1,26 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "template-node-typescript.fullname" . }}
+  name: {{ include "template-graphql-typescript.fullname" . }}
   labels:
-    app.kubernetes.io/name: {{ include "template-node-typescript.name" . }}
-    helm.sh/chart: {{ include "template-node-typescript.chart" . }}
+    app.kubernetes.io/name: {{ include "template-graphql-typescript.name" . }}
+    helm.sh/chart: {{ include "template-graphql-typescript.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "template-node-typescript.name" . }}
+      app.kubernetes.io/name: {{ include "template-graphql-typescript.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "template-node-typescript.name" . }}
+        app.kubernetes.io/name: {{ include "template-graphql-typescript.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      {{- if .Values.image.secretName }}
       imagePullSecrets:
         - name: {{ .Values.image.secretName }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
