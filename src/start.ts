@@ -1,11 +1,15 @@
 import {GraphQLServer} from 'graphql-yoga';
 import {AddressInfo} from 'net';
 import 'reflect-metadata';
+import * as express from "express"
+import {Server} from 'typescript-rest';
 
 import {workerManager} from './workers';
 import {buildGraphqlSchema} from './schema';
+import {HealthController} from "./controllers/health.controller";
 
 export const start = async (): Promise<any> => {
+
   const graphqlServer = new GraphQLServer({
     schema: await buildGraphqlSchema(),
   });
@@ -13,6 +17,19 @@ export const start = async (): Promise<any> => {
   const graceful = () => {
     workerManager.stop().then(() => process.exit(0));
   };
+
+  const apiRouter: express.Router = express.Router();
+
+  Server.useIoC(true);
+  Server.loadControllers(
+      apiRouter,
+      [
+        'controllers/*',
+      ],
+      __dirname,
+  );
+
+  graphqlServer.express.use(apiRouter);
 
   // Stop graceful
   process.on('SIGTERM', graceful);
