@@ -1,6 +1,7 @@
 {
   "name": "template-graphql-typescript",
   "version": "1.0.0",
+  "org": "my-org",
   "description": "",
   "main": "index.js",
   "config": {
@@ -10,6 +11,7 @@
     "contextRoot": ""
   },
   "jest": {
+    "testResultsProcessor": "jest-sonar-reporter",
     "setupFiles": [
       "jest-plugin-context/setup"
     ],
@@ -46,8 +48,8 @@
     "serve": "node dist/src",
     "upgrade-interactive": "npm-check --update",
     "pact:verify": "ts-node test/pact-verify",
-    "pact:publish": "pact publish -p ./pacts -c $npm_package_version -b $npm_package_pact_pactBrokerUrl",
-    "generate-exports": "echo \"export IMAGE_NAME=\\\"$npm_package_name\\\";\nexport IMAGE_VERSION=\\\"$npm_package_version\\\";\nexport IMAGE_BUILD_NUMBER=\\\"$BUILD_NUMBER\\\";\nexport START_TIME=\\\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\\\";\""
+    "pact:publish": "ts-node test/pact-publish",
+    "sonarqube:scan": "npm run test && ts-node test/sonarqube-scan"
   },
   "author": "",
   "license": "ISC",
@@ -84,8 +86,10 @@
     "easygraphql-tester": "^5.1.6",
     "jest": "^24.7.1",
     "jest-plugin-context": "^2.9.0",
+    "jest-sonar-reporter": "^2.0.0",
     "npm-check": "^5.9.0",
     "rimraf": "^2.6.3",
+    "sonarqube-scanner": "^2.5.0",
     "supertest": "^4.0.2",
     "ts-jest": "^24.0.2",
     "ts-node": "^8.1.0",

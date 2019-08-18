@@ -1,40 +1,67 @@
-def buildLabel = "agent.${env.JOB_NAME}.${env.BUILD_NUMBER}".replace('-', '_').replace('/', '_')
+/*
+ * This is a vanilla Jenkins pipeline that relies on the Jenkins kubernetes plugin to dynamically provision agents for
+ * the build containers.
+ *
+ * The individual containers are defined in the `jenkins-pod-template.yaml` and the containers are referenced by name
+ * in the `container()` blocks. The underlying pod definition expects certain kube Secrets and ConfigMap objects to
+ * have been created in order for the Pod to run. See `jenkins-pod-template.yaml` for more information.
+ *
+ * The cloudName variable is set dynamically based on the existance/value of env.CLOUD_NAME which allows this pipeline
+ * to run in both Kubernetes and OpenShift environments.
+ */
+
+def buildLabel = "agent.${env.JOB_NAME.substring(0, 23)}.${env.BUILD_NUMBER}".replace('-', '_').replace('/', '_')
 def cloudName = env.CLOUD_NAME == "openshift" ? "openshift" : "kubernetes"
+def workingDir = env.CLOUD_NAME == "openshift" ? "/home/jenkins" : "/home/jenkins/agent"
 podTemplate(
    label: buildLabel,
    cloud: cloudName,
-   containers: [
-      containerTemplate(
-         name: 'node',
-         image: 'node:11-stretch',
-         ttyEnabled: true,
-         command: '/bin/bash'
-      ),
-      containerTemplate(
-         name: 'ibmcloud',
-         image: 'docker.io/garagecatalyst/ibmcloud-dev:1.0.5',
-         ttyEnabled: true,
-         command: '/bin/bash',
-         envVars: [
-            envVar(key: 'APIURL', value: 'https://cloud.ibm.com'),
-            secretEnvVar(key: 'APIKEY', secretName: 'ibmcloud-apikey', secretKey: 'password'),
-            secretEnvVar(key: 'RESOURCE_GROUP', secretName: 'ibmcloud-apikey', secretKey: 'resource_group'),
-            secretEnvVar(key: 'REGISTRY_URL', secretName: 'ibmcloud-apikey', secretKey: 'registry_url'),
-            secretEnvVar(key: 'REGISTRY_NAMESPACE', secretName: 'ibmcloud-apikey', secretKey: 'registry_namespace'),
-            secretEnvVar(key: 'REGION', secretName: 'ibmcloud-apikey', secretKey: 'region'),
-            secretEnvVar(key: 'CLUSTER_NAME', secretName: 'ibmcloud-apikey', secretKey: 'cluster_name'),
-            secretEnvVar(key: 'CLUSTER_TYPE', secretName: 'ibmcloud-apikey', secretKey: 'cluster_type'),
-            secretEnvVar(key: 'SERVER_URL', secretName: 'ibmcloud-apikey', secretKey: 'server_url'),
-            secretEnvVar(key: 'INGRESS_SUBDOMAIN', secretName: 'ibmcloud-apikey', secretKey: 'ingress_subdomain'),
-            envVar(key: 'CHART_NAME', value: 'template-graphql-typescript'),
-            envVar(key: 'CHART_ROOT', value: 'chart'),
-            envVar(key: 'TMP_DIR', value: '.tmp'),
-            envVar(key: 'BUILD_NUMBER', value: "${env.BUILD_NUMBER}"),
-            envVar(key: 'HOME', value: '/home/devops'), // needed for the ibmcloud cli to find plugins
-         ],
-      ),
-   ],
-   serviceAccount: 'jenkins'
+   yaml: """
+apiVersion: v1
+kind: Pod
+spec:
+  serviceAccountName: jenkins
+  containers:
+    - name: node
+      image: node:11-stretch
+      tty: true
+      command: ["/bin/bash"]
+      workingDir: ${workingDir}
+      envFrom:
+        - configMapRef:
+            name: pactbroker-config
+            optional: true
+        - configMapRef:
+            name: sonarqube-config
+            optional: true
+        - secretRef:
+            name: sonarqube-access
+            optional: true
+      env:
+        - name: HOME
+          value: ${workingDir}
+    - name: ibmcloud
+      image: docker.io/garagecatalyst/ibmcloud-dev:1.0.7
+      tty: true
+      command: ["/bin/bash"]
+      workingDir: ${workingDir}
+      envFrom:
+        - configMapRef:
+            name: ibmcloud-config
+        - secretRef:
+            name: ibmcloud-apikey
+      env:
+        - name: CHART_NAME
+          value: starter-kit-chart
+        - name: CHART_ROOT
+          value: chart
+        - name: TMP_DIR
+          value: .tmp
+        - name: HOME
+          value: /home/devops
+        - name: BUILD_NUMBER
+          value: ${env.BUILD_NUMBER}
+"""
 ) {
     node(buildLabel) {
         container(name: 'node', shell: '/bin/bash') {
@@ -45,6 +72,7 @@ podTemplate(
                     # Export project name, version, and build number to ./env-config
                     npm run env | grep "^npm_package_name" | sed "s/npm_package_name/IMAGE_NAME/g"  > ./env-config
                     npm run env | grep "^npm_package_version" | sed "s/npm_package_version/IMAGE_VERSION/g" >> ./env-config
+                    echo "BUILD_NUMBER=${BUILD_NUMBER}" >> ./env-config
                 '''
             }
             stage('Build') {
@@ -58,6 +86,24 @@ podTemplate(
                 sh '''#!/bin/bash
                     set -x
                     npm test
+                '''
+            }
+            stage('Publish pacts') {
+                sh '''#!/bin/bash
+                    set -x
+                    #npm run pact:publish
+                '''
+            }
+            stage('Verify pact') {
+                sh '''#!/bin/bash
+                    set -x
+                    #npm run pact:verify
+                '''
+            }
+            stage('Sonar scan') {
+                sh '''#!/bin/bash
+                    set -x
+                    npm run sonarqube:scan
                 '''
             }
         }
@@ -130,7 +176,7 @@ podTemplate(
                     ibmcloud cr build -t ${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${IMAGE_NAME}:${IMAGE_VERSION} .
                     if [[ -n "${BUILD_NUMBER}" ]]; then
                         echo -e "BUILDING CONTAINER IMAGE: ${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${IMAGE_NAME}:${IMAGE_VERSION}-${BUILD_NUMBER}"
-                        ibmcloud cr build -t ${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${IMAGE_NAME}:${IMAGE_VERSION}-${BUILD_NUMBER} .
+                        ibmcloud cr image-tag ${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${IMAGE_NAME}:${IMAGE_VERSION} ${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${IMAGE_NAME}:${IMAGE_VERSION}-${BUILD_NUMBER}
                     fi
                     
                     echo -e "Available images in registry"
@@ -165,8 +211,6 @@ podTemplate(
                     IMAGE_REPOSITORY="${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${IMAGE_NAME}"
                     PIPELINE_IMAGE_URL="${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${IMAGE_NAME}:${IMAGE_VERSION}"
 
-                    echo "${ENVIRONMENT_NAME}.${INGRESS_SUBDOMAIN}"
-
                     # Using 'upgrade --install" for rolling updates. Note that subsequent updates will occur in the same namespace the release is currently deployed in, ignoring the explicit--namespace argument".
                     helm template ${CHART_PATH} \
                         --name ${RELEASE_NAME} \
@@ -174,9 +218,8 @@ podTemplate(
                         --set nameOverride=${IMAGE_NAME} \
                         --set image.repository=${IMAGE_REPOSITORY} \
                         --set image.tag=${IMAGE_VERSION} \
-                        --set image.secretName="${ENVIRONMENT_NAME}-us-icr-io" \
-                        --set ingress_subdomain="${ENVIRONMENT_NAME}.${INGRESS_SUBDOMAIN}" \
-                        --set host="${IMAGE_NAME}" > ./release.yaml
+                        --set ingress.tlsSecretName="${TLS_SECRET_NAME}" \
+                        --set ingress.subdomain="${INGRESS_SUBDOMAIN}" > ./release.yaml
                     
                     echo -e "Generated release yaml for: ${CLUSTER_NAME}/${ENVIRONMENT_NAME}."
                     cat ./release.yaml
