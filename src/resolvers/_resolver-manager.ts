@@ -1,5 +1,4 @@
-
-const resolvers = [];
+import {Container} from 'typescript-ioc';
 
 export abstract class ResolverManager {
   abstract registerResolver(resolver): any;
@@ -18,4 +17,4 @@ class ResolverManagerImpl implements ResolverManager {
   }
 }
 
-export const resolverManager: ResolverManager = new ResolverManagerImpl();
+export const resolverManager: ResolverManager = Container.get(ResolverManagerImpl);
