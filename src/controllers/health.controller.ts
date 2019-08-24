@@ -7,7 +7,7 @@ import {GET, Path} from 'typescript-rest';
 export class HealthController {
 
   @GET
-  async healthCheck(): Promise<string> {
-    return "{status: 'UP'}";
+  async healthCheck(): Promise<{status: string;}> {
+    return {status: 'UP'};
   }
 }

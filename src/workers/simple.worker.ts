@@ -1,15 +1,24 @@
 import Timeout = NodeJS.Timeout;
 import {WorkerApi} from './worker.api';
 import {workerManager} from './worker-manager';
+import {Container, Inject} from 'typescript-ioc';
+import {LoggerApi} from '../logger';
 
 class SimpleWorker implements WorkerApi {
+  @Inject
+  _logger: LoggerApi;
+
   private promise: Promise<any>;
   private stopped = false;
   private interval: Timeout;
 
+  get logger(): LoggerApi {
+    return this._logger.child('SimpleWorker');
+  }
+
   async stop(): Promise<any> {
     this.stopped = true;
-    console.log('*** Stopping simple worker');
+    this.logger.info('*** Stopping simple worker');
 
     if (this.interval) {
       clearInterval(this.interval);
@@ -38,9 +47,9 @@ class SimpleWorker implements WorkerApi {
   }
 
   writeLog() {
-    console.log('**** Simple worker running');
+    this.logger.info('**** Simple worker running');
   }
 }
 
-// uncomment to activate worker
-// export const worker: WorkerApi = workerManager.registerWorker(new SimpleWorker());
+// Uncomment to activate worker
+//export const worker: WorkerApi = workerManager.registerWorker(Container.get(SimpleWorker));

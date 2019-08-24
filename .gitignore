@@ -7,3 +7,6 @@ logs/
 pacts/
 .bluemix/
 .helm/
+schema.gql
+.scannerwork/
+test-report.xml

@@ -3,6 +3,7 @@ import {ProjectModel, TaskModel} from '../models';
 export const projects: ProjectModel[] = [
   { id: 1, name: "Learn React Native" },
   { id: 2, name: "Workout" },
+  { id: 3, name: "Other" },
 ];
 
 export const tasks: TaskModel[] = [
