@@ -1,10 +1,12 @@
 import {AutoWired, Provided, Provider, Provides, Singleton} from 'typescript-ioc';
 import * as BunyanLogger from 'bunyan';
 import * as PrettyStream from 'bunyan-prettystream';
+import * as path from 'path'
 
 import {LoggerApi} from './logger.api';
 
-const pkg = require('../../package.json');
+const pkg = require(path.join(process.cwd(),'package.json'));
+
 
 // tslint:disable
 class ChildLogger extends LoggerApi {
