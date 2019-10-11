@@ -100,13 +100,13 @@ spec:
             stage('Publish pacts') {
                 sh '''#!/bin/bash
                     set -x
-                    #npm run pact:publish
+                    npm run pact:publish
                 '''
             }
             stage('Verify pact') {
                 sh '''#!/bin/bash
                     set -x
-                    #npm run pact:verify
+                    npm run pact:verify
                 '''
             }
             stage('Sonar scan') {
