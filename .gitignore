@@ -11,4 +11,4 @@ schema.gql
 .scannerwork/
 test-report.xml
 
-pipeline-build-config.json
+/pipeline-build-config.json

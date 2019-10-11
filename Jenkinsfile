@@ -41,7 +41,7 @@ spec:
         - name: HOME
           value: ${workingDir}
     - name: ibmcloud
-      image: docker.io/garagecatalyst/ibmcloud-dev:1.0.7
+      image: docker.io/garagecatalyst/ibmcloud-dev:1.0.8
       tty: true
       command: ["/bin/bash"]
       workingDir: ${workingDir}
@@ -55,6 +55,9 @@ spec:
             optional: true
         - secretRef:
             name: artifactory-access
+            optional: true
+        - secretRef:
+            name: gitops-cd-secret
             optional: true
       env:
         - name: CHART_NAME
@@ -97,19 +100,25 @@ spec:
             stage('Publish pacts') {
                 sh '''#!/bin/bash
                     set -x
-                    #npm run pact:publish
+                    npm run pact:publish
                 '''
             }
             stage('Verify pact') {
                 sh '''#!/bin/bash
                     set -x
-                    #npm run pact:verify
+                    npm run pact:verify
                 '''
             }
             stage('Sonar scan') {
                 sh '''#!/bin/bash
-                    set -x
-                    npm run sonarqube:scan
+
+                if [[ -z "${SONARQUBE_URL}" ]]; then
+                  echo "Skipping Sonar Qube step as Sonar Qube not installed or configured"
+                  exit 0
+                fi
+
+                set -x
+                npm run sonarqube:scan
                 '''
             }
         }
@@ -216,14 +225,20 @@ spec:
                     
                     IMAGE_REPOSITORY="${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${IMAGE_NAME}"
                     PIPELINE_IMAGE_URL="${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${IMAGE_NAME}:${IMAGE_VERSION}"
+                    
+                    # Update helm chart with repository and tag values
+                    cat ${CHART_PATH}/values.yaml | \
+                        yq w - nameOverride "${IMAGE_NAME}" | \
+                        yq w - fullnameOverride "${IMAGE_NAME}" | \
+                        yq w - image.repository "${IMAGE_REPOSITORY}" | \
+                        yq w - image.tag "${IMAGE_VERSION}" > ./values.yaml.tmp
+                    cp ./values.yaml.tmp ${CHART_PATH}/values.yaml
+                    cat ${CHART_PATH}/values.yaml
 
                     # Using 'upgrade --install" for rolling updates. Note that subsequent updates will occur in the same namespace the release is currently deployed in, ignoring the explicit--namespace argument".
                     helm template ${CHART_PATH} \
                         --name ${RELEASE_NAME} \
                         --namespace ${ENVIRONMENT_NAME} \
-                        --set nameOverride=${IMAGE_NAME} \
-                        --set image.repository=${IMAGE_REPOSITORY} \
-                        --set image.tag=${IMAGE_VERSION} \
                         --set ingress.tlsSecretName="${TLS_SECRET_NAME}" \
                         --set ingress.subdomain="${INGRESS_SUBDOMAIN}" > ./release.yaml
                     
@@ -234,60 +249,6 @@ spec:
                     kubectl apply -n ${ENVIRONMENT_NAME} -f ./release.yaml
 
                     # ${SCRIPT_ROOT}/deploy-checkstatus.sh ${ENVIRONMENT_NAME} ${IMAGE_NAME} ${IMAGE_REPOSITORY} ${IMAGE_VERSION}
-                '''
-            }
-            stage('Package Helm Chart') {
-                sh '''#!/bin/bash
-                    set -x
-
-                    . ./env-config
-
-                    if [[ -n "${BUILD_NUMBER}" ]]; then
-                      IMAGE_BUILD_VERSION="${IMAGE_VERSION}-${BUILD_NUMBER}"
-                    fi
-
-                    if [[ -z "${ARTIFACTORY_ENCRPT}" ]]; then
-                        echo "Encrption key not available for Jenkins pipeline, please add it to the artifactory-access"
-                        exit 1
-                    fi
-
-                    sudo apt-get install jq.
-
-                    # Check if a Generic Local Repo has been created and retrieve the URL for it
-                    export URL=$(curl -u${ARTIFACTORY_USER}:${ARTIFACTORY_PASSWORD} -X GET "${ARTIFACTORY_URL}/artifactory/api/repositories?type=LOCAL" | jq '.[0].url' | tr -d \\")
-                    echo ${URL}
-
-                    # Check if the URL is valid and we can continue
-                    if [ -n "${URL}" ]; then
-                        echo "Successfully read Repo ${URL}"
-                    else
-                        echo "No Repository Created"
-                        exit 1;
-                    fi;
-
-                    # Package Helm Chart
-                    helm package --version ${IMAGE_BUILD_VERSION} chart/${CHART_NAME}
-
-                    # Get the index and re index it with current Helm Chart
-                    curl -u${ARTIFACTORY_USER}:${ARTIFACTORY_ENCRPT} -O "${URL}/${REGISTRY_NAMESPACE}/index.yaml"
-
-                    if [[ $(cat index.yaml | jq '.errors[0].status') != "404" ]]; then
-                        # Merge the chart index with the current index.yaml held in Artifactory
-                        echo "Merging Chart into index.yaml for Chart Repository"
-                        helm repo index . --url ${URL}/${REGISTRY_NAMESPACE} --merge index.yaml
-                    else
-                        # Dont Merge this is first time one is being created
-                        echo "Creating a new index.yaml for Chart Repository"
-                        rm index.yaml
-                        helm repo index . --url ${URL}/${REGISTRY_NAMESPACE}
-                    fi;
-
-                    # Persist the Helm Chart in Artifactory for us by ArgoCD
-                    curl -u${ARTIFACTORY_USER}:${ARTIFACTORY_ENCRPT} -i -vvv -T ${CHART_NAME}-${IMAGE_BUILD_VERSION}.tgz "${URL}/${REGISTRY_NAMESPACE}/${CHART_NAME}-${IMAGE_BUILD_VERSION}.tgz"
-
-                    # Persist the Helm Chart in Artifactory for us by ArgoCD
-                    curl -u${ARTIFACTORY_USER}:${ARTIFACTORY_ENCRPT} -i -vvv -T index.yaml "${URL}/${REGISTRY_NAMESPACE}/index.yaml"
-
                 '''
             }
             stage('Health Check') {
@@ -311,6 +272,109 @@ spec:
                         exit 1;
                     fi;
 
+                '''
+            }
+            stage('Package Helm Chart') {
+                sh '''#!/bin/bash
+                set -x
+
+                if [[ -z "${ARTIFACTORY_ENCRPT}" ]]; then
+                  echo "Skipping Artifactory step as Artifactory is not installed or configured"
+                  exit 0
+                fi
+
+                . ./env-config
+
+                if [[ -n "${BUILD_NUMBER}" ]]; then
+                  IMAGE_BUILD_VERSION="${IMAGE_VERSION}-${BUILD_NUMBER}"
+                fi
+
+                if [[ -z "${ARTIFACTORY_ENCRPT}" ]]; then
+                    echo "Encrption key not available for Jenkins pipeline, please add it to the artifactory-access"
+                    exit 1
+                fi
+
+                sudo apt-get install jq.
+
+                # Check if a Generic Local Repo has been created and retrieve the URL for it
+                export URL=$(curl -u${ARTIFACTORY_USER}:${ARTIFACTORY_PASSWORD} -X GET "${ARTIFACTORY_URL}/artifactory/api/repositories?type=LOCAL" | jq '.[0].url' | tr -d \\")
+                echo ${URL}
+
+                # Check if the URL is valid and we can continue
+                if [ -n "${URL}" ]; then
+                    echo "Successfully read Repo ${URL}"
+                else
+                    echo "No Repository Created"
+                    exit 1;
+                fi;
+
+                # Package Helm Chart
+                helm package --version ${IMAGE_BUILD_VERSION} chart/${CHART_NAME}
+
+                # Get the index and re index it with current Helm Chart
+                curl -u${ARTIFACTORY_USER}:${ARTIFACTORY_ENCRPT} -O "${URL}/${REGISTRY_NAMESPACE}/index.yaml"
+
+                if [[ $(cat index.yaml | jq '.errors[0].status') != "404" ]]; then
+                    # Merge the chart index with the current index.yaml held in Artifactory
+                    echo "Merging Chart into index.yaml for Chart Repository"
+                    helm repo index . --url ${URL}/${REGISTRY_NAMESPACE} --merge index.yaml
+                else
+                    # Dont Merge this is first time one is being created
+                    echo "Creating a new index.yaml for Chart Repository"
+                    rm index.yaml
+                    helm repo index . --url ${URL}/${REGISTRY_NAMESPACE}
+                fi;
+
+                # Persist the Helm Chart in Artifactory for us by ArgoCD
+                curl -u${ARTIFACTORY_USER}:${ARTIFACTORY_ENCRPT} -i -vvv -T ${CHART_NAME}-${IMAGE_BUILD_VERSION}.tgz "${URL}/${REGISTRY_NAMESPACE}/${CHART_NAME}-${IMAGE_BUILD_VERSION}.tgz"
+
+                # Persist the Helm Chart in Artifactory for us by ArgoCD
+                curl -u${ARTIFACTORY_USER}:${ARTIFACTORY_ENCRPT} -i -vvv -T index.yaml "${URL}/${REGISTRY_NAMESPACE}/index.yaml"
+
+            '''
+            }
+            stage('Trigger CD Pipeline') {
+                sh '''#!/bin/bash
+                    if [[ -z "${GITOPS_CD_URL}" ]]; then
+                        exit 0
+                    fi
+                    if [[ -z "${GITOPS_CD_BRANCH}" ]]; then
+                        GITOPS_CD_BRANCH="master"
+                    fi
+                    
+                    . ./env-config
+                    
+                    if [[ -n "${BUILD_NUMBER}" ]]; then
+                      IMAGE_BUILD_VERSION="${IMAGE_VERSION}-${BUILD_NUMBER}"
+                    fi
+                    
+                    # This email is not used and it not valid, you can ignore but git requires it
+                    git config --global user.email "jenkins@ibmcloud.com"
+                    git config --global user.name "Jenkins Pipeline"
+                    
+                    git clone -b ${GITOPS_CD_BRANCH} ${GITOPS_CD_URL} gitops_cd
+                    cd gitops_cd
+                    
+                    echo "Requirements before update"
+                    cat "./${IMAGE_NAME}/requirements.yaml"
+                    
+                    # Read the helm repo
+                    HELM_REPO=$(yq r ./${IMAGE_NAME}/requirements.yaml 'dependencies[0].repository')
+                    
+                    # Write the updated requirements.yaml
+                    echo "dependencies:" > ./requirements.yaml.tmp
+                    echo "  - name: ${CHART_NAME}" >> ./requirements.yaml.tmp
+                    echo "    version: ${IMAGE_BUILD_VERSION}" >> ./requirements.yaml.tmp
+                    echo "    repository: ${HELM_REPO}" >> ./requirements.yaml.tmp
+                    
+                    cp ./requirements.yaml.tmp "./${IMAGE_NAME}/requirements.yaml"
+                    
+                    echo "Requirements after update"
+                    cat "./${IMAGE_NAME}/requirements.yaml"
+                    
+                    git add -u
+                    git commit -m "Updates ${IMAGE_NAME} to ${IMAGE_BUILD_VERSION}"
+                    git push
                 '''
             }
         }
