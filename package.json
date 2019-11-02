@@ -26,6 +26,8 @@
     "prebuild": "npm run clean",
     "build": "tsc",
     "build:schema": "ts-node src/schema.ts",
+    "postbuild": "npm run swagger",
+    "swagger": "swaggerGen -c ./swagger.config.json",
     "prestart": "npm run build",
     "start": "npm run serve",
     "serve": "node dist/src",
@@ -49,7 +51,8 @@
     "tslib": "^1.10.0",
     "type-graphql": "^0.17.4",
     "typescript-ioc": "^1.2.5",
-    "typescript-rest": "^2.2.2"
+    "typescript-rest": "^2.2.2",
+    "typescript-rest-swagger": "^1.0.4"
   },
   "devDependencies": {
     "@babel/core": "^7.4.3",
