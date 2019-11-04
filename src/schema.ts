@@ -1,6 +1,8 @@
 import {buildSchema} from 'type-graphql';
-import {resolverManager} from './resolvers';
 import {GraphQLSchema} from 'graphql';
+import {join} from 'path';
+
+import {resolverManager} from './resolvers';
 import {timer} from './util';
 
 export async function buildGraphqlSchema(): Promise<GraphQLSchema | undefined> {
@@ -13,7 +15,7 @@ export async function buildGraphqlSchema(): Promise<GraphQLSchema | undefined> {
 
   const schema: GraphQLSchema = await buildSchema({
     resolvers,
-    emitSchemaFile: true,
+    emitSchemaFile: {path: join(process.cwd(), 'schema.gql')},,
   });
 
   return schema;
