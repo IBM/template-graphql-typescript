@@ -15,7 +15,7 @@ export async function buildGraphqlSchema(): Promise<GraphQLSchema | undefined> {
 
   const schema: GraphQLSchema = await buildSchema({
     resolvers,
-    emitSchemaFile: {path: join(process.cwd(), 'schema.gql')},,
+    emitSchemaFile: {path: join(process.cwd(), 'schema.gql')},
   });
 
   return schema;
