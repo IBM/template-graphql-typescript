@@ -76,6 +76,8 @@ spec:
           value: .tmp
         - name: HOME
           value: /home/devops
+        - name: ENVIRONMENT_NAME
+          value: dev
         - name: BUILD_NUMBER
           value: ${env.BUILD_NUMBER}
 """
@@ -86,10 +88,11 @@ spec:
             stage('Setup') {
                 sh '''#!/bin/bash
                     set -x
-                    # Export project name, version, and build number to ./env-config
-                    npm run env | grep "^npm_package_name" | sed "s/npm_package_name/IMAGE_NAME/g"  > ./env-config
+                    # Export project name (lowercase), version, and build number to ./env-config
+                    npm run env | grep "^npm_package_name" | tr '[:upper:]' '[:lower:]' | sed "s/_/-/g" | sed "s/npm-package-name/IMAGE_NAME/g" > ./env-config
                     npm run env | grep "^npm_package_version" | sed "s/npm_package_version/IMAGE_VERSION/g" >> ./env-config
                     echo "BUILD_NUMBER=${BUILD_NUMBER}" >> ./env-config
+                    cat ./env-config
                 '''
             }
             stage('Build') {
@@ -131,50 +134,7 @@ spec:
             }
         }
         container(name: 'ibmcloud', shell: '/bin/bash') {
-            stage('Verify environment') {
-                sh '''#!/bin/bash
-                    set -x
-                    
-                    whoami
-                    
-                    . ./env-config
 
-                    if [[ -z "${APIKEY}" ]]; then
-                      echo "APIKEY is required"
-                      exit 1
-                    fi
-                    
-                    if [[ -z "${RESOURCE_GROUP}" ]]; then
-                      echo "RESOURCE_GROUP is required"
-                      exit 1
-                    fi
-                    
-                    if [[ -z "${REGION}" ]]; then
-                      echo "REGION is required"
-                      exit 1
-                    fi
-                    
-                    if [[ -z "${REGISTRY_NAMESPACE}" ]]; then
-                      echo "REGISTRY_NAMESPACE is required"
-                      exit 1
-                    fi
-                    
-                    if [[ -z "${REGISTRY_URL}" ]]; then
-                      echo "REGISTRY_URL is required"
-                      exit 1
-                    fi
-                    
-                    if [[ -z "${IMAGE_NAME}" ]]; then
-                      echo "IMAGE_NAME is required"
-                      exit 1
-                    fi
-                    
-                    if [[ -z "${IMAGE_VERSION}" ]]; then
-                      echo "IMAGE_VERSION is required"
-                      exit 1
-                    fi
-                '''
-            }
             stage('Build image') {
                 sh '''#!/bin/bash
                     set -x
@@ -212,8 +172,6 @@ spec:
 
                     . ./env-config
                     
-                    ENVIRONMENT_NAME=dev
-
                     CHART_PATH="${CHART_ROOT}/${CHART_NAME}"
 
                     echo "KUBECONFIG=${KUBECONFIG}"
@@ -263,8 +221,6 @@ spec:
                 sh '''#!/bin/bash
                     . ./env-config
                     
-                    ENVIRONMENT_NAME=dev
-
                     INGRESS_NAME="${IMAGE_NAME}"
                     INGRESS_HOST=$(kubectl get ingress/${INGRESS_NAME} --namespace ${ENVIRONMENT_NAME} --output=jsonpath='{ .spec.rules[0].host }')
                     PORT='80'
