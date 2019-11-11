@@ -157,6 +157,8 @@ spec:
                           yq w - name "${IMAGE_NAME}" > "${CHART_ROOT}/${IMAGE_NAME}/Chart.yaml"
                     fi
 
+                    CHART_PATH="${CHART_ROOT}/${IMAGE_NAME}"
+
                     echo "KUBECONFIG=${KUBECONFIG}"
 
                     RELEASE_NAME="${IMAGE_NAME}"
@@ -171,14 +173,15 @@ spec:
                     
                     echo "CHECKING CHART (lint)"
                     helm lint ${CHART_PATH}
+                    if [[ $? -ne 0 ]]; then
+                      exit 1
+                    fi
                     
                     IMAGE_REPOSITORY="${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${IMAGE_NAME}"
                     PIPELINE_IMAGE_URL="${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${IMAGE_NAME}:${IMAGE_VERSION}"
                     
                     # Update helm chart with repository and tag values
                     cat ${CHART_PATH}/values.yaml | \
-                        yq w - nameOverride "${IMAGE_NAME}" | \
-                        yq w - fullnameOverride "${IMAGE_NAME}" | \
                         yq w - image.repository "${IMAGE_REPOSITORY}" | \
                         yq w - image.tag "${IMAGE_VERSION}" > ./values.yaml.tmp
                     cp ./values.yaml.tmp ${CHART_PATH}/values.yaml
