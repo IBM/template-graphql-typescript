@@ -1,4 +1,5 @@
 import {Server} from 'typescript-rest';
+import {Config, Container, Inject} from 'typescript-ioc';
 import {join} from "path";
 import {existsSync} from 'fs';
 import express = require('express');
@@ -9,13 +10,15 @@ import 'reflect-metadata';
 
 import {buildGraphqlSchema} from './schema';
 import {workerManager} from './workers';
-import {Config, Container} from 'typescript-ioc';
+import {LoggerApi} from './logger';
 
 const npmPackage = require(join(process.cwd(), 'package.json'));
 
 const config = npmPackage.config || {port: 3000};
 
 export class ApiServer {
+  @Inject
+  logger: LoggerApi;
 
   private graphQLServerPromise: Promise<GraphQLServer>;
   private server: http.Server;
@@ -42,6 +45,7 @@ export class ApiServer {
         __dirname,
       );
 
+      this.logger.apply(graphqlServer.express);
       graphqlServer.express.use(apiRouter);
 
       const swaggerPath = join(process.cwd(), 'dist/swagger.json');
