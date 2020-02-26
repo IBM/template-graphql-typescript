@@ -10,7 +10,10 @@
  * to run in both Kubernetes and OpenShift environments.
  */
 
-def buildAgentName(String jobName, String buildNumber) {
+
+def buildAgentName(String jobNameWithNamespace, String buildNumber, String namespace) {
+    def jobName = removeNamespaceFromJobName(jobNameWithNamespace, namespace);
+
     if (jobName.length() > 55) {
         jobName = jobName.substring(0, 55);
     }
@@ -18,7 +21,11 @@ def buildAgentName(String jobName, String buildNumber) {
     return "a.${jobName}${buildNumber}".replace('_', '-').replace('/', '-').replace('-.', '.');
 }
 
-def buildLabel = buildAgentName(env.JOB_NAME, env.BUILD_NUMBER);
+def removeNamespaceFromJobName(String jobName, String namespace) {
+    return jobName.replaceAll(namespace + "-", "");
+}
+
+def buildLabel = buildAgentName(env.JOB_NAME, env.BUILD_NUMBER, env.NAMESPACE);
 def namespace = env.NAMESPACE ?: "dev"
 def cloudName = env.CLOUD_NAME == "openshift" ? "openshift" : "kubernetes"
 def workingDir = "/home/jenkins/agent"
@@ -67,7 +74,7 @@ spec:
             optional: true
       env:
         - name: CHART_NAME
-          value: template-graphql-typescript
+          value: base
         - name: CHART_ROOT
           value: chart
         - name: TMP_DIR
@@ -110,7 +117,7 @@ spec:
             stage('Build') {
                 sh '''#!/bin/bash
                     npm install
-                    npm run build
+                    npm run build --if-present
                 '''
             }
             stage('Test') {
@@ -120,12 +127,12 @@ spec:
             }
             stage('Publish pacts') {
                 sh '''#!/bin/bash
-                    npm run pact:publish
+                    npm run pact:publish --if-present
                 '''
             }
             stage('Verify pact') {
                 sh '''#!/bin/bash
-                    npm run pact:verify
+                    npm run pact:verify --if-present
                 '''
             }
             stage('Sonar scan') {
@@ -136,7 +143,7 @@ spec:
                   exit 0
                 fi
 
-                npm run sonarqube:scan
+                npm run sonarqube:scan --if-present
                 '''
             }
         }
@@ -163,6 +170,8 @@ spec:
                 sh '''#!/bin/bash
                     echo "Deploying to ${ENVIRONMENT_NAME}"
 
+                    set +x
+
                     . ./env-config
 
                     if [[ "${CHART_NAME}" != "${IMAGE_NAME}" ]]; then
@@ -170,7 +179,7 @@ spec:
                       cat "${CHART_ROOT}/${CHART_NAME}/Chart.yaml" | \
                           yq w - name "${IMAGE_NAME}" > "${CHART_ROOT}/${IMAGE_NAME}/Chart.yaml"
                     fi
-
+                    
                     CHART_PATH="${CHART_ROOT}/${IMAGE_NAME}"
 
                     echo "KUBECONFIG=${KUBECONFIG}"
@@ -181,23 +190,31 @@ spec:
                     if [[ -n "${BUILD_NUMBER}" ]]; then
                       IMAGE_VERSION="${IMAGE_VERSION}-${BUILD_NUMBER}"
                     fi
-
+                    
                     echo "INITIALIZING helm with client-only (no Tiller)"
                     helm init --client-only 1> /dev/null 2> /dev/null
-
+                    
                     echo "CHECKING CHART (lint)"
                     helm lint ${CHART_PATH}
-                    if [[ $? -ne 0 ]]; then
-                      exit 1
-                    fi
 
                     IMAGE_REPOSITORY="${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${IMAGE_NAME}"
                     PIPELINE_IMAGE_URL="${REGISTRY_URL}/${REGISTRY_NAMESPACE}/${IMAGE_NAME}:${IMAGE_VERSION}"
 
+                    INGRESS_ENABLED="true"
+                    ROUTE_ENABLED="false"
+                    if [[ "${CLUSTER_TYPE}" == "openshift" ]]; then
+                        INGRESS_ENABLED="false"
+                        ROUTE_ENABLED="true"
+                    fi
+
                     # Update helm chart with repository and tag values
                     cat ${CHART_PATH}/values.yaml | \
+                        yq w - nameOverride "${IMAGE_NAME}" | \
+                        yq w - fullnameOverride "${IMAGE_NAME}" | \
                         yq w - image.repository "${IMAGE_REPOSITORY}" | \
-                        yq w - image.tag "${IMAGE_VERSION}" > ./values.yaml.tmp
+                        yq w - image.tag "${IMAGE_VERSION}" | \
+                        yq w - ingress.enabled "${INGRESS_ENABLED}" | \
+                        yq w - route.enabled "${ROUTE_ENABLED}" > ./values.yaml.tmp
                     cp ./values.yaml.tmp ${CHART_PATH}/values.yaml
                     cat ${CHART_PATH}/values.yaml
 
@@ -207,34 +224,36 @@ spec:
                         --namespace ${ENVIRONMENT_NAME} \
                         --set ingress.tlsSecretName="${TLS_SECRET_NAME}" \
                         --set ingress.subdomain="${INGRESS_SUBDOMAIN}" > ./release.yaml
-
+                    
                     echo -e "Generated release yaml for: ${CLUSTER_NAME}/${ENVIRONMENT_NAME}."
                     cat ./release.yaml
-
+                    
                     echo -e "Deploying into: ${CLUSTER_NAME}/${ENVIRONMENT_NAME}."
-                    kubectl apply -n ${ENVIRONMENT_NAME} -f ./release.yaml
-
-                    # ${SCRIPT_ROOT}/deploy-checkstatus.sh ${ENVIRONMENT_NAME} ${IMAGE_NAME} ${IMAGE_REPOSITORY} ${IMAGE_VERSION}
+                    kubectl apply -n ${ENVIRONMENT_NAME} -f ./release.yaml --validate=false
                 '''
             }
             stage('Health Check') {
                 sh '''#!/bin/bash
                     . ./env-config
-                    INGRESS_NAME="${IMAGE_NAME}"
-                    INGRESS_HOST=$(kubectl get ingress/${INGRESS_NAME} --namespace ${ENVIRONMENT_NAME} --output=jsonpath='{ .spec.rules[0].host }')
-                    PORT='80'
+
+                    if [[ "${CLUSTER_TYPE}" == "openshift" ]]; then
+                        ROUTE_HOST=$(kubectl get route/${IMAGE_NAME} --namespace ${ENVIRONMENT_NAME} --output=jsonpath='{ .spec.host }')
+                        URL="https://${ROUTE_HOST}"
+                    else
+                        INGRESS_HOST=$(kubectl get ingress/${IMAGE_NAME} --namespace ${ENVIRONMENT_NAME} --output=jsonpath='{ .spec.rules[0].host }')
+                        URL="http://${INGRESS_HOST}"
+                    fi
 
                     # sleep for 10 seconds to allow enough time for the server to start
                     sleep 30
 
-                    if [ $(curl -sL -w "%{http_code}\\n" "http://${INGRESS_HOST}:${PORT}/health" -o /dev/null --connect-timeout 3 --max-time 5 --retry 3 --retry-max-time 30) == "200" ]; then
-                        echo "Successfully reached health endpoint: http://${INGRESS_HOST}:${PORT}/health"
-                    echo "====================================================================="
-                        else
-                    echo "Could not reach health endpoint: http://${INGRESS_HOST}:${PORT}/health"
+                    if [ $(curl -sL -w "%{http_code}\\n" "${URL}/health" -o /dev/null --connect-timeout 3 --max-time 5 --retry 3 --retry-max-time 30) == "200" ]; then
+                        echo "Successfully reached health endpoint: ${URL}/health"
+                        echo "====================================================================="
+                    else
+                        echo "Could not reach health endpoint: ${URL}/health"
                         exit 1;
                     fi;
-
                 '''
             }
             stage('Package Helm Chart') {
@@ -342,3 +361,4 @@ spec:
         }
     }
 }
+
