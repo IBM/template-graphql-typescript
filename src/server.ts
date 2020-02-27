@@ -72,11 +72,11 @@ export class ApiServer {
   }
 
   get swaggerProtocols(): string[] {
-    return parseCSVString(process.env.PROTOCOLS, 'http');
+    return parseCSVString(process.env.PROTOCOLS, '');
   }
 
   get swaggerHost(): string {
-    return process.env.INGRESS_HOST || `localhost:${this.PORT}`;
+    return process.env.INGRESS_HOST || '';
   }
 
   public bind(source: Function): Config {
