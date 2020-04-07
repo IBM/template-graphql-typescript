@@ -1,4 +1,4 @@
-import {Inject, Provides, Singleton} from 'typescript-ioc';
+import {Inject} from 'typescript-ioc';
 
 import {ProjectApi} from './project.api';
 import {ProjectModel} from '../models';
@@ -11,8 +11,6 @@ export class ProjectServiceConfig {
   }
 }
 
-@Singleton
-@Provides(ProjectApi)
 export class ProjectService implements ProjectApi {
   @Inject
   private readonly config: ProjectServiceConfig;

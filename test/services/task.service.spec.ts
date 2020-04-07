@@ -12,7 +12,7 @@ describe('task.service', () => {
     beforeEach(() => {
       Container
         .bind(TaskServiceConfig)
-        .provider({get: () => ({timeout: 2})});
+        .factory(() => ({timeout: 2}));
 
       service = Container.get(TaskService);
     });

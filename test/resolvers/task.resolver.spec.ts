@@ -1,8 +1,9 @@
-import {ProjectApi, TaskApi} from '../../src/services';
 import {Container} from 'typescript-ioc';
+
+import {ProjectApi, TaskApi} from '../../src/services';
 import {TaskResolver} from '../../src/resolvers';
 import {ProjectModel, TaskModel} from '../../src/models';
-import {MockProjectApiProvider, MockTaskApiProvider} from './test-helpers';
+import {mockProjectApiProvider, mockTaskApiProvider} from './test-helpers';
 import Mock = jest.Mock;
 
 describe('task.resolver', () => {
@@ -15,8 +16,8 @@ describe('task.resolver', () => {
   });
 
   beforeEach(() => {
-    Container.bind(ProjectApi).provider(new MockProjectApiProvider());
-    Container.bind(TaskApi).provider(new MockTaskApiProvider());
+    Container.bind(ProjectApi).factory(mockProjectApiProvider);
+    Container.bind(TaskApi).factory(mockTaskApiProvider);
 
     classUnderTest = Container.get(TaskResolver);
     projectService = Container.get(ProjectApi);

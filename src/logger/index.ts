@@ -1,3 +1,7 @@
+import {Container, Scope} from 'typescript-ioc';
+import {LoggerApi} from './logger.api';
+import {PinoLoggerService} from './logger-pino.service';
+
 export * from './logger.api';
-export * from './logger-pino.service';
-export * from './logger-noop.service';
+
+Container.bind(LoggerApi).to(PinoLoggerService).scope(Scope.Singleton);

@@ -1,5 +1,6 @@
+import {Container, Inject} from 'typescript-ioc';
+
 import {WorkerApi} from './worker.api';
-import {Container, Inject, Provides, Singleton} from 'typescript-ioc';
 import {LoggerApi} from '../logger';
 
 export abstract class WorkerManager {
@@ -9,7 +10,6 @@ export abstract class WorkerManager {
   abstract workerCount(): number;
 }
 
-@Provides(WorkerManager)
 class WorkerManagerImpl implements WorkerManager {
   @Inject
   _logger: LoggerApi;
@@ -47,5 +47,7 @@ class WorkerManagerImpl implements WorkerManager {
 
   }
 }
+
+Container.bind(WorkerManager).to(WorkerManagerImpl);
 
 export const workerManager: WorkerManager = Container.get(WorkerManager);

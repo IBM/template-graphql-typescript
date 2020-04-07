@@ -11,7 +11,7 @@ describe('project.service', () => {
     beforeEach(() => {
       Container
         .bind(ProjectServiceConfig)
-        .provider({get: () => ({timeout: 2})});
+        .factory(() => ({timeout: 2}));
 
       service = Container.get(ProjectService);
     });

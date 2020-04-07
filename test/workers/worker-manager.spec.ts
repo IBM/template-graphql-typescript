@@ -3,7 +3,8 @@ import Mock = jest.Mock;
 
 import {WorkerManager} from '../../src/workers';
 import {WorkerApi} from '../../src/workers/worker.api';
-import {LoggerApi, NoopLoggerService} from '../../src/logger';
+import {LoggerApi} from '../../src/logger';
+import {NoopLoggerService} from '../../src/logger/logger-noop.service';
 
 describe('worker-manager', () => {
   test('canary verifies test infrastructure', () => {

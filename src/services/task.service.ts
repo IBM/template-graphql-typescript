@@ -1,4 +1,4 @@
-import {Inject, Provides, Singleton} from 'typescript-ioc';
+import {Inject} from 'typescript-ioc';
 
 import {TaskApi} from './task.api';
 import {TaskModel} from '../models';
@@ -11,8 +11,6 @@ export class TaskServiceConfig {
   }
 }
 
-@Singleton
-@Provides(TaskApi)
 export class TaskService implements TaskApi {
   @Inject
   private readonly config: TaskServiceConfig;
