@@ -81,7 +81,7 @@ spec:
               name: git-credentials
               key: password
     - name: buildah
-      image: quay.io/buildah/stable:v1.9.2
+      image: quay.io/buildah/stable:v1.9.0
       tty: true
       command: ["/bin/bash"]
       workingDir: ${workingDir}
