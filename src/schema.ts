@@ -5,7 +5,7 @@ import {join} from 'path';
 import {resolverManager} from './resolvers';
 import {timer} from './util';
 
-export async function buildGraphqlSchema(): Promise<GraphQLSchema | undefined> {
+export async function buildGraphqlSchema(): Promise<GraphQLSchema> {
   await timer('', 2);
 
   const resolvers = resolverManager.getResolvers();

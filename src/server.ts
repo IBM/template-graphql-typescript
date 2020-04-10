@@ -31,12 +31,11 @@ export class ApiServer {
 
     return this.graphQLServerPromise = new Promise(async (resolve, reject) => {
       const graphqlServer = new GraphQLServer({
-        schema: await buildGraphqlSchema(),
+        schema: (await buildGraphqlSchema() as any),
       });
 
       const apiRouter: express.Router = express.Router();
 
-      Server.useIoC(true);
       Server.loadControllers(
         apiRouter,
         [

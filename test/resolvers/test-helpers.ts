@@ -1,27 +1,23 @@
-import {Provider} from 'typescript-ioc';
+import {BuildContext, ObjectFactory} from 'typescript-ioc';
 import {ProjectApi, TaskApi} from '../../src/services';
 
-export class MockProjectApiProvider implements Provider {
-  private projectApi: ProjectApi = {
+export const mockProjectApiProvider: ObjectFactory = (context?: BuildContext) => {
+  const projectApi: ProjectApi = {
     listProjects: jest.fn() as any,
     getProjectById: jest.fn() as any,
     getProject: jest.fn() as any,
   };
 
-  get(): ProjectApi {
-    return this.projectApi;
-  }
+  return projectApi;
 };
 
-export class MockTaskApiProvider implements Provider {
-  private taskApi: TaskApi = {
+export const mockTaskApiProvider: ObjectFactory = (context?: BuildContext) => {
+  const taskApi: TaskApi = {
     getTask: jest.fn() as any,
     getTasksForProject: jest.fn() as any,
     listTasks: jest.fn() as any,
     markAsCompleted: jest.fn() as any,
   };
 
-  get(): TaskApi {
-    return this.taskApi;
-  }
-}
+  return taskApi;
+};

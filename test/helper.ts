@@ -1,5 +1,6 @@
 import {ApiServer} from '../src/server';
-import {LoggerApi, NoopLoggerService} from '../src/logger';
+import {LoggerApi} from '../src/logger';
+import {NoopLoggerService} from '../src/logger/logger-noop.service';
 
 export function buildApiServer(enableLogging?: boolean): ApiServer {
   const apiServer = new ApiServer();
