@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as EasyGraphQLTester from 'easygraphql-tester';
 import {buildGraphqlSchema} from '../../src/schema';
 
-describe('task schema', () => {
+describe.skip('task schema', () => {
   test('canary test verifies test infrastructure', () => {
     expect(true).toEqual(true);
   });
