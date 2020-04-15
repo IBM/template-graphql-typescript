@@ -222,7 +222,7 @@ spec:
 
                     git fetch origin
                     git fetch origin --tags
-                    git branch --set-upstream-to=origin/${BRANCH} ${BRANCH}
+                    git checkout -b ${BRANCH} --track origin/${BRANCH}
                     git describe --tag `git rev-parse HEAD`
 
                     git config --global user.name "Jenkins Pipeline"
