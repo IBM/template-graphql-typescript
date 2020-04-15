@@ -220,10 +220,13 @@ spec:
 
                     git config --local credential.helper "!f() { echo username=\\$GIT_AUTH_USER; echo password=\\$GIT_AUTH_PWD; }; f"
 
+                    COMMIT_HASH=$(git rev-parse HEAD)
+
                     git fetch origin
-                    git fetch origin --tags
                     git checkout -b ${BRANCH} --track origin/${BRANCH}
-                    git describe --tag `git rev-parse HEAD`
+                    git reset --hard ${COMMIT_HASH}
+                    git fetch --tags
+                    git describe --tag ${COMMIT_HASH}
 
                     git config --global user.name "Jenkins Pipeline"
                     git config --global user.email "jenkins@ibmcloud.com"
