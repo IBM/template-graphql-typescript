@@ -222,10 +222,14 @@ spec:
 
                     COMMIT_HASH=$(git rev-parse HEAD)
 
-                    git fetch origin
+                    git fetch --tags origin ${BRANCH}
+                    git fetch origin ${BRANCH}
+
+                    git ls-remote --tags
+                    git tag
+
                     git checkout -b ${BRANCH} --track origin/${BRANCH}
                     git reset --hard ${COMMIT_HASH}
-                    git fetch --tags
                     git describe --tag ${COMMIT_HASH}
 
                     git config --global user.name "Jenkins Pipeline"
