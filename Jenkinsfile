@@ -222,9 +222,6 @@ spec:
 
                     COMMIT_HASH=$(git rev-parse HEAD)
 
-                    git fetch --tags origin ${BRANCH}
-                    git fetch origin ${BRANCH}
-
                     git ls-remote --tags
                     git tag
 
