@@ -249,9 +249,12 @@ spec:
                     release-it patch ${PRE_RELEASE} \
                       --ci \
                       --no-npm \
+                      --no-git.push \
                       --no-git.requireCleanWorkingDir \
                       --verbose \
                       -VV
+
+                    git push --follow-tags -v
 
                     echo "IMAGE_VERSION=$(git describe --abbrev=0 --tags)" > ./env-config
                     echo "IMAGE_NAME=$(basename -s .git `git config --get remote.origin.url` | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')" >> ./env-config
