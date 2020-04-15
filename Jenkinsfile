@@ -220,10 +220,8 @@ spec:
 
                     git config --local credential.helper "!f() { echo username=\\$GIT_AUTH_USER; echo password=\\$GIT_AUTH_PWD; }; f"
 
-                    git fetch --unshallow; echo done
                     git fetch origin
                     git fetch origin --tags
-                    git checkout ${BRANCH}
                     git branch --set-upstream-to=origin/${BRANCH} ${BRANCH}
                     git describe --tag `git rev-parse HEAD`
 
