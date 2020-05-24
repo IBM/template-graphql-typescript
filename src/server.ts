@@ -3,6 +3,7 @@ import {Config, Container, Inject} from 'typescript-ioc';
 import {join} from "path";
 import {existsSync} from 'fs';
 import express = require('express');
+import opentracingMiddleware from 'express-opentracing';
 import {AddressInfo} from 'net';
 import {GraphQLServer} from 'graphql-yoga';
 import http = require('http');
@@ -11,6 +12,7 @@ import 'reflect-metadata';
 import {buildGraphqlSchema} from './schema';
 import {workerManager} from './workers';
 import {LoggerApi} from './logger';
+import {TracerApi} from './tracer';
 
 const npmPackage = require(join(process.cwd(), 'package.json'));
 
@@ -19,6 +21,8 @@ const config = npmPackage.config || {port: 3000};
 export class ApiServer {
   @Inject
   logger: LoggerApi;
+  @Inject
+  tracer: TracerApi;
 
   private graphQLServerPromise: Promise<GraphQLServer>;
   private server: http.Server;
@@ -44,6 +48,7 @@ export class ApiServer {
         __dirname,
       );
 
+      graphqlServer.express.use(opentracingMiddleware({tracer: this.tracer}))
       this.logger.apply(graphqlServer.express);
       graphqlServer.express.use(apiRouter);
 
