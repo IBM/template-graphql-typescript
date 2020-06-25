@@ -2,9 +2,10 @@ import {FORMAT_HTTP_HEADERS, FORMAT_TEXT_MAP, globalTracer, Span, Tags, Tracer} 
 import {createNamespace} from 'cls-hooked';
 import * as url from "url";
 
-import {TraceConstants} from '../trace-constants';
+import {TraceConstants} from './trace-constants';
+import {omit} from '../object';
 
-const clsNamespace = createNamespace(TraceConstants.TRACE_NAMESPACE);
+const clsNamespace = createNamespace(TraceConstants.NAMESPACE);
 
 export const buildTraceContext = (context: any) => {
   if (!context) {
@@ -14,18 +15,23 @@ export const buildTraceContext = (context: any) => {
   if (context['uber-trace-id']) {
     const uberTraceId: string = context['uber-trace-id'];
 
-    const regex = new RegExp('([^:]*):([^:]*):.*');
-    const traceId = uberTraceId.replace(regex, '$1');
-    const spanId = uberTraceId.replace(regex, '$2');
+    const values = uberTraceId.split(':');
+    if (values.length < 4) {
+      return context;
+    }
 
-    return {traceId, spanId};
+    const traceId = values[0];
+    const spanId = values[1];
+    const parentSpanId = values[2];
+    const flags = values[3];
+
+    return Object.assign({}, omit(context, 'uber-trace-id'), {traceId, spanId, parentSpanId, flags});
   }
 
   return context;
 }
 
-export function opentracingMiddleware(options: {tracer?: Tracer} = {}) {
-  const tracer = options.tracer || globalTracer();
+export function opentracingMiddleware({tracer = globalTracer()}: {tracer?: Tracer} = {}) {
 
   return (req, res, next) => {
     clsNamespace.bindEmitter(req);
@@ -73,7 +79,11 @@ export function opentracingMiddleware(options: {tracer?: Tracer} = {}) {
     clsNamespace.run(() => {
       clsNamespace.set(
         TraceConstants.TRACE_CONTEXT,
-        buildTraceContext(responseHeaders)
+        buildTraceContext(responseHeaders),
+      );
+      clsNamespace.set(
+        TraceConstants.SPAN,
+        span,
       );
 
       next();
