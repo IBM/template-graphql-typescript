@@ -9,7 +9,7 @@ export async function buildGraphqlSchema(): Promise<GraphQLSchema> {
   await timer('', 2);
 
   const resolvers = resolverManager.getResolvers();
-  if (!resolvers || resolvers.length == 0) {
+  if (!resolvers || resolvers.length === 0) {
     return;
   }
 
