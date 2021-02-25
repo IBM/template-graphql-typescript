@@ -12,3 +12,4 @@ schema.gql
 test-report.xml
 
 /pipeline-build-config.json
+*.tgz
