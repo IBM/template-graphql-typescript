@@ -1,12 +1,6 @@
 FROM registry.access.redhat.com/ubi8/nodejs-12:1-77 AS builder
 
-USER root
-
-RUN yum install -y python36 && yum clean all
-
 WORKDIR /opt/app-root/src
-
-USER default
 
 COPY . .
 
@@ -31,10 +25,10 @@ COPY ./licenses /licenses
 
 USER default
 
-LABEL name="Typescript GraphQL" \
+LABEL name="ibm/template-graphql-typescript/" \
       vendor="IBM" \
-      version="v1.0.0" \
-      release="1" \
+      version="1" \
+      release="77" \
       summary="This is an example of a container image." \
       description="This container image will deploy a Typescript GraphQL App"
 
