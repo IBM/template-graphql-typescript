@@ -29,7 +29,7 @@ USER default
 LABEL name="ibm/template-graphql-typescript" \
       vendor="IBM" \
       version="1" \
-      release="28" \
+      release="28.1618434924" \
       summary="This is an example of a container image." \
       description="This container image will deploy a Typescript GraphQL App"
 
