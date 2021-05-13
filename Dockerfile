@@ -4,25 +4,26 @@ WORKDIR /opt/app-root/src
 
 COPY . .
 
-RUN npm install
-RUN npm run build
+RUN npm ci && npm run build
 
-FROM registry.access.redhat.com/ubi8/nodejs-14:1-28.1618434924
+FROM builder
+
+WORKDIR /opt/app-root/src
 
 COPY --from=builder /opt/app-root/src/dist dist
 COPY package*.json ./
-RUN npm install --production
+RUN npm ci --only=production
 
 ENV HOST=0.0.0.0 PORT=3000
 
 EXPOSE 3000/tcp
 
-USER root
 
 ## Uncomment the below line to update image security content if any
+# USER root
 # RUN dnf -y update-minimal --security --sec-severity=Important --sec-severity=Critical && dnf clean all
 
-COPY ./licenses /licenses
+COPY licenses /licenses
 
 USER default
 
