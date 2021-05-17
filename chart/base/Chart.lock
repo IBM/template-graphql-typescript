@@ -1,6 +1,0 @@
-dependencies:
-- name: starter-kit
-  repository: https://charts.cloudnativetoolkit.dev/
-  version: 0.6.0
-digest: sha256:e60473cc29edf7a7f2931efab85fa7f7d91889f0db107213ca648da9237424b3
-generated: "2021-05-17T07:21:59.83931-05:00"
