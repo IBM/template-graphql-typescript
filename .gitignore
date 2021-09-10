@@ -1,0 +1,14 @@
+.idea/
+node_modules/
+*.iml
+dist/
+coverage/
+logs/
+.helm/
+pipeline-build-config.json
+test-report.xml
+.scannerwork/
+
+# Chart dependencies
+**/charts/*.tgz
+Chart.lock
