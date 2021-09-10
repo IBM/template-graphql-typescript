@@ -1,6 +1,6 @@
 import {Container} from 'typescript-ioc';
 
-import {HelloWorldService} from '../../src/services';
+import {HelloWorldService} from '../../src/services/hello-world.service';
 import {ApiServer} from '../../src/server';
 import {buildApiServer} from '../helper';
 

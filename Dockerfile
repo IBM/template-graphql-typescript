@@ -14,12 +14,12 @@ FROM registry.access.redhat.com/ubi8/nodejs-14:1-43
 
 USER default
 
-LABEL name="ibm/template-node-typescript" \
+LABEL name="ibm/template-graphql-typescript" \
       vendor="IBM" \
       version="1" \
       release="28.1618434924" \
       summary="This is an example of a container image." \
-      description="This container image will deploy a Typescript Node App"
+      description="This container image will deploy a Typescript GraphQL App"
 
 WORKDIR /opt/app-root/src
 

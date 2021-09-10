@@ -4,7 +4,7 @@ import {Inject} from 'typescript-ioc';
 import {AddressInfo} from 'net';
 
 import * as npmPackage from '../package.json';
-import {parseCsvString} from './util/string-util';
+import {parseCsvString} from './util';
 import {LoggerApi} from './logger';
 import {TracerApi} from './tracer';
 import {opentracingMiddleware} from './util/opentracing/express-middleware';
@@ -12,6 +12,10 @@ import fs = require('fs');
 import http = require('http');
 import path = require('path');
 import cors = require('cors');
+import {ApolloServer} from 'apollo-server-express';
+import {Config} from 'apollo-server-core/src/types';
+import {GraphQLSchema} from 'graphql';
+import {buildGraphqlSchema} from './schema';
 
 const config = npmPackage.config || {
   protocol: 'http',
@@ -36,12 +40,6 @@ export class ApiServer {
     this.app.use(opentracingMiddleware({tracer: this.tracer}));
     this.logger.apply(this.app);
     this.app.use(cors());
-
-    if (!apiContext || apiContext === '/') {
-      this.app.use(express.static(path.join(process.cwd(), 'public'), { maxAge: 31557600000 }));
-    } else {
-      this.app.use(apiContext, express.static(path.join(process.cwd(), 'public'), { maxAge: 31557600000 }));
-    }
 
     const apiRouter: express.Router = express.Router();
     Server.loadServices(
@@ -70,6 +68,25 @@ export class ApiServer {
     } else {
       this.app.use(apiContext, apiRouter);
     }
+
+    new Promise<ApolloServer>(async (resolve, reject) => {
+      try {
+        const schema: GraphQLSchema = await buildGraphqlSchema() as any;
+
+        const graphqlServer = new ApolloServer({schema});
+        await graphqlServer.start();
+
+        graphqlServer.applyMiddleware({app: this.app});
+
+        resolve(graphqlServer);
+      } catch (error) {
+        reject(error);
+      }
+    }).then(graphqlServer => {
+      this.logger.info('Graphql server started: ' + graphqlServer.graphqlPath)
+    }).catch(error => {
+      this.logger.error('Error starting graphql server', {error})
+    });
   }
 
   /**

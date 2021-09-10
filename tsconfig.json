@@ -3,6 +3,7 @@
   "compilerOptions": {
     "baseUrl": "./",
     "outDir": "./dist",
+    "esModuleInterop": true,
     "noImplicitAny": false,
     "sourceMap": false,
     "declaration": false,
