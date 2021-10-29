@@ -87,6 +87,9 @@ export class ApiServer {
     }).catch(error => {
       this.logger.error('Error starting graphql server', {error})
     });
+
+    console.log('Path: ' + path.join(__dirname, '../../public'));
+    this.app.use(express.static(path.join(__dirname, '../../public')))
   }
 
   /**
