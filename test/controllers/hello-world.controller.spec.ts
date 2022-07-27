@@ -1,5 +1,5 @@
 import {Application} from 'express';
-import {default as request} from 'supertest';
+import request from 'supertest';
 import {Container, Scope} from 'typescript-ioc';
 
 import {HelloWorldApi} from '../../src/services';
