@@ -68,7 +68,7 @@
     "@types/pino": "^6.3.11",
     "@types/superagent": "^4.1.12",
     "@types/supertest": "^2.0.11",
-    "babel-jest": "^27.1.1",
+    "babel-jest": "^29.2.1",
     "easygraphql-tester": "^6.0.1",
     "jest": "^27.1.1",
     "jest-plugin-context": "^2.9.0",
