@@ -41,7 +41,7 @@
     "graphql": "^15.5.3",
     "jaeger-client": "^3.18.1",
     "opentracing": "^0.14.5",
-    "pino": "^6.13.2",
+    "pino": "^8.8.0",
     "rxjs": "^7.3.0",
     "superagent": "^6.1.0",
     "tslib": "^2.3.1",
