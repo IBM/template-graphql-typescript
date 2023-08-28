@@ -1,0 +1,12 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+"""greeting"""
+type Greeting {
+  greeting: String!
+}
+
+type Query {
+  helloWorld: Greeting!
+}

@@ -4,13 +4,10 @@ node_modules/
 dist/
 coverage/
 logs/
-pacts/
-.bluemix/
 .helm/
 pipeline-build-config.json
 test-report.xml
 .scannerwork/
-schema.gql
 
 # Chart dependencies
 **/charts/*.tgz
