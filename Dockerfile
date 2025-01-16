@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/nodejs-18:1-62.1692771036 AS builder
+FROM registry.access.redhat.com/ubi9/nodejs-22:9.5-1736454190 AS builder
 
 WORKDIR /opt/app-root/src
 
@@ -6,19 +6,19 @@ COPY --chown=default:root . .
 
 RUN mkdir -p /opt/app-root/src/node_modules && \
     ls -lA && \
-    npm ci && \
+    npm ci --force && \
     npm run build
 
-FROM registry.access.redhat.com/ubi9/nodejs-18-minimal:1-67
+FROM registry.access.redhat.com/ubi9/nodejs-22-minimal:9.5-1736731764
 
 ## Uncomment the below lines to update image security content if any
 # USER root
 # RUN dnf -y update-minimal --security --sec-severity=Important --sec-severity=Critical && dnf clean all
 
-LABEL name="ibm/template-node-typescript" \
+LABEL name="ibm/template-graphql-typescript" \
       vendor="IBM" \
-      version="1" \
-      release="67" \
+      version="9" \
+      release="5" \
       summary="This is an example of a container image." \
       description="This container image will deploy a Typescript Node App"
 
@@ -30,7 +30,7 @@ COPY --chown=1001:root package*.json ./
 
 RUN ls -lA && \
     mkdir -p /opt/app-root/src/node_modules && \
-    npm ci --only=production
+    npm ci --only=production --force
 
 COPY --chown=1001:root licenses licenses
 COPY --chown=1001:root public public
