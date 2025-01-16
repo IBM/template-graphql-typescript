@@ -6,7 +6,7 @@ COPY --chown=default:root . .
 
 RUN mkdir -p /opt/app-root/src/node_modules && \
     ls -lA && \
-    npm ci --force && \
+    npm ci && \
     npm run build
 
 FROM registry.access.redhat.com/ubi9/nodejs-22-minimal:9.5-1736731764
@@ -30,7 +30,7 @@ COPY --chown=1001:root package*.json ./
 
 RUN ls -lA && \
     mkdir -p /opt/app-root/src/node_modules && \
-    npm ci --only=production --force
+    npm ci --only=production 
 
 COPY --chown=1001:root licenses licenses
 COPY --chown=1001:root public public
