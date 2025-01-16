@@ -21,10 +21,10 @@
   },
   "dependencies": {
     "@apollo/server": "^4.11.3",
-    "@nestjs/apollo": "^12.2.2",
+    "@nestjs/apollo": "https://gitpkg.vercel.app/seansund/nestjs-graphql/packages/apollo?3443-apollo-peer-deps",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
-    "@nestjs/graphql": "^12.2.2",
+    "@nestjs/graphql": "https://gitpkg.vercel.app/seansund/nestjs-graphql/packages/graphql?3443-apollo-peer-deps",
     "@nestjs/platform-express": "^11.0.1",
     "graphql": "^16.10.0",
     "graphql-subscriptions": "^3.0.0",
@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^10.4.9",
+    "@nestjs/mapped-types": "^2.0.6",
     "@nestjs/schematics": "^10.2.3",
     "@nestjs/testing": "^11.0.1",
     "@types/express": "^5.0.0",
