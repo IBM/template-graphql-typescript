@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/nodejs-22:9.5-1736454190 AS builder
+FROM registry.access.redhat.com/ubi9/nodejs-22:9.5-1737605092 AS builder
 
 WORKDIR /opt/app-root/src
 
@@ -9,7 +9,7 @@ RUN mkdir -p /opt/app-root/src/node_modules && \
     npm ci && \
     npm run build
 
-FROM registry.access.redhat.com/ubi9/nodejs-22-minimal:9.5-1736731764
+FROM registry.access.redhat.com/ubi9/nodejs-22-minimal:9.5-1737619681
 
 ## Uncomment the below lines to update image security content if any
 # USER root
