@@ -30,7 +30,7 @@ COPY --chown=1001:root package*.json ./
 
 RUN ls -lA && \
     mkdir -p /opt/app-root/src/node_modules && \
-    npm ci --only=production 
+    npm ci --omit=dev
 
 COPY --chown=1001:root licenses licenses
 COPY --chown=1001:root public public
